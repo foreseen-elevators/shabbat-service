@@ -6,6 +6,7 @@ import {
   HebrewCalendar,
   Location,
   ParshaEvent,
+  Zmanim,
   flags,
 } from '@hebcal/core';
 import { CITY_LOOKUP_NAME, CITY_SLUGS, CitySlug, getLocationForCity } from './cities.js';
@@ -47,22 +48,16 @@ function israelWeekday(date: Date): number {
   return WEEKDAY_INDEX[label];
 }
 
-/**
- * Israel's current wall-clock calendar day, packed into a Date via the local
- * constructor so that downstream local-getter-based calendar-day logic
- * (`HDate`, `formatYMD`) is correct no matter what timezone the host
- * container runs in. Only suitable for calendar-day purposes — its
- * underlying instant is not a valid "now" for chronological comparisons.
- */
-function israelCalendarDateNow(): Date {
+/** "YYYY-MM-DD" for an instant's calendar day in Israel local time, independent of host system timezone. */
+function israelYMD(date: Date): string {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: ISRAEL_TZ,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).formatToParts(new Date());
-  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
-  return new Date(get('year'), get('month') - 1, get('day'));
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value;
+  return `${get('year')}-${get('month')}-${get('day')}`;
 }
 
 function toTimeInfo(ev: CandleLightingEvent | HavdalahEvent): TimeInfo {
@@ -138,6 +133,7 @@ function resolveParasha(shabbatHDate: HDate, il: boolean) {
       parasha: {
         english: parshaEvent.render('en'),
         hebrew: parshaEvent.render('he'),
+        hebrewNoNikud: parshaEvent.render('he-x-NoNikud'),
         names: result.parsha,
       },
       holidayReading: null,
@@ -227,17 +223,17 @@ export function getNextParasha(referenceDate: Date = new Date()) {
 }
 
 export function getHebrewDateToday(referenceDate?: Date) {
-  // Default to Israel's current wall-clock calendar day rather than
-  // `new Date()` as-is: without this, "today" would be computed against the
-  // host container's system timezone (often UTC on Coolify), which can be
-  // a day behind Israel's actual date for a few hours around Israel midnight.
-  const effectiveDate = referenceDate ?? israelCalendarDateNow();
-  const hd = new HDate(effectiveDate);
+  const effectiveDate = referenceDate ?? new Date();
+  // The Hebrew day changes at sunset, not midnight - Jerusalem is used as
+  // the reference location regardless of which city a caller cares about.
+  const location = getLocationForCity('jerusalem');
+  const hd = Zmanim.makeSunsetAwareHDate(location, effectiveDate, false);
   return {
-    gregorianDate: formatYMD(effectiveDate),
+    gregorianDate: israelYMD(effectiveDate),
     hebrewDate: {
       english: hd.render('en'),
       hebrew: hd.render('he'),
+      gematriya: hd.renderGematriya(true),
       year: hd.getFullYear(),
     },
   };

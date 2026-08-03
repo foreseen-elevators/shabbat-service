@@ -30,9 +30,17 @@ The current Hebrew date.
 ```json
 {
   "gregorianDate": "2026-08-03",
-  "hebrewDate": { "english": "20th of Av, 5786", "hebrew": "כ׳ בְּאָב תשפ״ו", "year": 5786 }
+  "hebrewDate": {
+    "english": "20th of Av, 5786",
+    "hebrew": "20 אָב, 5786",
+    "gematriya": "כ׳ אב תשפ״ו",
+    "year": 5786
+  }
 }
 ```
+
+The Hebrew day changes at sunset (in Jerusalem), not midnight, so this
+reflects the sunset-aware "today" rather than a plain calendar-midnight day.
 
 ### `GET /api/parasha`
 
@@ -42,7 +50,12 @@ The parasha (or holiday reading) for the upcoming Shabbat.
 {
   "shabbat": { "hebrewDate": "1st of Elul, 5786", "gregorianDate": "2026-08-15" },
   "isHolidayReading": false,
-  "parasha": { "english": "Parashat Shoftim", "hebrew": "פרשת שופטים", "names": ["Shoftim"] },
+  "parasha": {
+    "english": "Parashat Shoftim",
+    "hebrew": "פָּרָשַׁת שׁוֹפְטִים",
+    "hebrewNoNikud": "פרשת שופטים",
+    "names": ["Shoftim"]
+  },
   "holidayReading": null
 }
 ```
@@ -65,7 +78,12 @@ Full detail for one city (`jerusalem`, `tel-aviv`, `haifa`, or `beer-sheva`).
   "candleLighting": { "iso": "2026-08-14T15:58:00.000Z", "time": "18:58", "gregorianDate": "2026-08-14" },
   "havdalah": { "iso": "2026-08-15T17:17:00.000Z", "time": "20:17", "gregorianDate": "2026-08-15" },
   "isHolidayReading": false,
-  "parasha": { "english": "Parashat Shoftim", "hebrew": "פרשת שופטים", "names": ["Shoftim"] },
+  "parasha": {
+    "english": "Parashat Shoftim",
+    "hebrew": "פָּרָשַׁת שׁוֹפְטִים",
+    "hebrewNoNikud": "פרשת שופטים",
+    "names": ["Shoftim"]
+  },
   "holidayReading": null,
   "chagBeforeShabbat": [],
   "diaspora": { "differsFromIsrael": false, "extraHolidays": [] }
