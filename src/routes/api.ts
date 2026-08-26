@@ -2,10 +2,40 @@ import { Router, type Request } from 'express';
 import { CITY_SLUGS, isCitySlug } from '../cities.js';
 import {
   getHebrewDateToday,
+  getMelachaWindows,
   getNextParasha,
   getNextShabbatForAllCities,
   getNextShabbatForCity,
+  type Reckoning,
 } from '../hebcalService.js';
+
+const RECKONINGS: Reckoning[] = ['israel', 'diaspora'];
+const DEFAULT_MELACHA_WINDOW_DAYS = 60;
+const MAX_MELACHA_WINDOW_DAYS = 180;
+
+function isReckoning(value: string): value is Reckoning {
+  return (RECKONINGS as string[]).includes(value);
+}
+
+function parseReckoning(raw: unknown): Reckoning {
+  if (raw === undefined) return 'israel';
+  if (typeof raw !== 'string' || !isReckoning(raw)) {
+    throw new BadRequestError(`"reckoning" must be one of: ${RECKONINGS.join(', ')}`);
+  }
+  return raw;
+}
+
+function parseDays(raw: unknown): number {
+  if (raw === undefined) return DEFAULT_MELACHA_WINDOW_DAYS;
+  if (typeof raw !== 'string' || !/^\d+$/.test(raw)) {
+    throw new BadRequestError('"days" must be a positive integer');
+  }
+  const parsed = Number(raw);
+  if (parsed < 1 || parsed > MAX_MELACHA_WINDOW_DAYS) {
+    throw new BadRequestError(`"days" must be between 1 and ${MAX_MELACHA_WINDOW_DAYS}`);
+  }
+  return parsed;
+}
 
 export const apiRouter = Router();
 
@@ -62,6 +92,27 @@ apiRouter.get('/shabbat/:city', (req, res, next) => {
       return;
     }
     res.json(getNextShabbatForCity(city, parseReferenceDate(req)));
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * Every span of time (Shabbat and standalone chagim alike) during which
+ * melacha is forbidden, for Jerusalem, over the next `days` days. Intended
+ * for callers who want to cache this once and evaluate "is it forbidden
+ * right now" locally rather than asking on every check.
+ */
+apiRouter.get('/melacha-windows', (req, res, next) => {
+  try {
+    const reckoning = parseReckoning(req.query.reckoning);
+    const days = parseDays(req.query.days);
+    const referenceDate = parseReferenceDate(req);
+    res.json({
+      reckoning,
+      generatedAt: new Date().toISOString(),
+      windows: getMelachaWindows(reckoning, days, referenceDate),
+    });
   } catch (err) {
     next(err);
   }

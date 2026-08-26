@@ -102,6 +102,42 @@ Full detail for one city (`jerusalem`, `tel-aviv`, `haifa`, or `beer-sheva`).
 Every endpoint above accepts an optional `date` query parameter to look up a
 specific week instead of "now", e.g. `/api/shabbat/haifa?date=2026-12-25`.
 
+### `GET /api/melacha-windows`
+
+Every span of time during which melacha (work) is forbidden - Shabbat *and*
+any standalone Yom Tov day, whether or not it's adjacent to a Saturday (e.g.
+a midweek day of Rosh Hashana) - over the next `days` days (default `60`,
+max `180`), for Jerusalem. Intended for callers who want to cache this once
+(it changes rarely) and evaluate "is it forbidden right now" locally
+instead of asking on every check.
+
+- `?reckoning=israel|diaspora` (default `israel`) - `diaspora` uses the
+  Diaspora holiday schedule, which adds the extra "Yom Tov Sheni shel
+  Galuyot" day (e.g. Sukkot II, Simchat Torah as a day separate from Shmini
+  Atzeret).
+- `?date=YYYY-MM-DD` - scan starting from this date instead of now.
+
+```json
+{
+  "reckoning": "israel",
+  "generatedAt": "2026-08-26T10:00:00.000Z",
+  "windows": [
+    {
+      "start": "2026-08-28T16:08:00.000Z",
+      "end": "2026-08-29T16:44:00.000Z",
+      "reasons": ["Shabbat"]
+    },
+    {
+      "start": "2026-09-20T15:39:00.000Z",
+      "end": "2026-09-21T16:13:00.000Z",
+      "reasons": ["Yom Kippur"]
+    }
+  ]
+}
+```
+
+`reasons` is informational only (not used for the boolean check itself).
+
 ## Running locally
 
 ```bash
